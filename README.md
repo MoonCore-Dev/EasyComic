@@ -2,9 +2,9 @@
 
 <img src="build/icon.png" alt="EasyComic" width="120" height="120">
 
-# EasyComic
+# EasyComic 易漫画
 
-### 你的漫画，由你掌控 —— 一款纯净、沉浸、全能的本地漫画阅读器
+### 看漫画就是如此简单 —— 一款轻量、纯净、沉浸、全能的本地漫画阅读器
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows-success.svg)]()
@@ -158,7 +158,7 @@ npm run electron:dev
 
 <div align="center">
 
-**用 EasyComic，把阅读还给阅读。**
+**用 EasyComic，漫画就是如此简单。**
 
 ⭐ 如果这个项目对你有帮助，欢迎 Star 支持一下！
 
