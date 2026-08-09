@@ -4,7 +4,7 @@
 
 # EasyComic 易漫画
 
-### 看漫画就是如此简单 —— 一款轻量、纯净、沉浸、全能的本地漫画阅读器
+### 漫画就是如此简单 —— 一款轻量、纯净、沉浸、全能的本地漫画阅读器
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows-success.svg)]()
