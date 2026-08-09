@@ -2,6 +2,7 @@
   "name": "easy-comic",
   "version": "1.0.0",
   "description": "A comic reader built with Electron + React + TypeScript",
+  "author": "MoonCore-Dev",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",

@@ -13,7 +13,7 @@ interface SettingsModalProps {
   onAllDataCleared: () => void
 }
 
-const GITHUB_REPO = 'your-repo/EasyComic'
+const GITHUB_REPO = 'MoonCore-Dev/easy-comic'
 
 function SettingsModal({ open, onClose, onAllDataCleared }: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState<SettingsTab>('general')
