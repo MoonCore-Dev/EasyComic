@@ -1,0 +1,21 @@
+node_modules
+dist
+dist-electron
+release
+*.log
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+
+# === 上传到 GitHub 前排除：构建残留 / 本地调试脚本 / 含本机路径的开发日志 ===
+dist_bak_*/
+*.tsbuildinfo
+DEV_LOG.md
+test-epub.mjs
+_pdfsize.cjs
+_sizemeasure.cjs
+check_css.js
+
+# tsc -b 生成的 vite 配置构建产物（真正源码是 vite.config.ts）
+vite.config.js
+vite.config.d.ts

@@ -1,0 +1,1172 @@
+/* ═══════════════════════════════════════════
+   主容器
+   ═══════════════════════════════════════════ */
+.reader {
+  width: 100%;
+  height: 100%;
+  background: #0b0c0c;
+  color: #E9E8EF;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ═══ 顶部名称栏 ═══ */
+.reader-topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 52px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(11, 12, 12, 0.55);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  backdrop-filter: blur(14px) saturate(1.2);
+  border-bottom: 1px solid rgba(233, 232, 239, 0.06);
+  z-index: 10;
+  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-100%);
+}
+
+.reader-topbar.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* 窗口控制按钮组 */
+.reader-win-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.reader-win-btn {
+  width: 36px;
+  height: 30px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(233, 232, 239, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.reader-win-btn:hover {
+  background: rgba(233, 232, 239, 0.1);
+  color: #E9E8EF;
+}
+
+.reader-win-btn-close:hover {
+  background: #E81123;
+  color: #fff;
+}
+
+.reader-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(233, 232, 239, 0.1);
+  color: #E9E8EF;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  transition: background 0.15s ease;
+  flex-shrink: 0;
+}
+
+.reader-back-btn:hover {
+  background: rgba(233, 232, 239, 0.2);
+}
+
+.reader-title {
+  flex: 1;
+  font-size: 14px;
+  color: #E9E8EF;
+  opacity: 0.9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+/* ═══ 漫画舞台 ═══ */
+.reader-stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.015), transparent 60%),
+    #0b0c0c;
+  overflow: hidden;
+}
+
+.reader-empty {
+  color: rgba(233, 232, 239, 0.4);
+  font-size: 14px;
+}
+
+/* ── 单页 ── */
+.reader-page-single {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ── 双页展开 ── */
+.reader-spread {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.reader-page-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+  border-radius: 4px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+  user-select: none;
+  -webkit-user-drag: none;
+  transition: transform 0.15s ease;
+}
+
+.reader-page-img-cover {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: cover;
+}
+
+.reader-spread .reader-page-img {
+  max-width: 50%;
+}
+
+.reader-spread .reader-page-img-cover {
+  width: 50%;
+  height: 100%;
+  max-width: none;
+}
+
+.reader-page-left {
+  border-radius: 4px 0 0 4px;
+}
+
+.reader-page-right {
+  border-radius: 0 4px 4px 0;
+}
+
+/* ── 拼接模式 ── */
+/* 外层裁剪容器：overflow:hidden，位移完全由 JS 通过 transform 驱动，禁用原生滚动 */
+.reader-stitch-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* 可视容器：overflow:hidden，不再依赖原生滚动条；
+   位移由 JS 对 .reader-stitch-inner 施加 transform:translate3d 实现（GPU 加速）。 */
+.reader-stitch-container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+/* 自绘胶囊滚动条：悬浮在右侧，不占容器宽度，漫画仍按屏幕宽度居中 */
+.reader-custom-scrollbar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 5px;
+  height: 100%;
+  pointer-events: auto;
+  opacity: 1;
+  transition: opacity 0.22s ease;
+  z-index: 100;
+}
+
+/* 设置里手动关闭 */
+.reader-custom-scrollbar.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* 无滚动闲置时自动淡出 */
+.reader-custom-scrollbar.idle {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.reader-custom-scrollbar-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border-radius: 999px;
+}
+
+.reader-custom-scrollbar-thumb {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  margin-left: 1px;
+  min-height: 30px;
+  background-color: rgba(233, 232, 239, 0.22);
+  border-radius: 999px;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: background-color 0.15s ease;
+}
+
+.reader-custom-scrollbar-thumb:hover {
+  background-color: rgba(233, 232, 239, 0.38);
+}
+
+/* 固定页面槽位：高度由 aspect-ratio 锁定，加载前/后完全一致，
+   图片用 object-fit:contain 填入，绝不改变槽位高度 → 布局永不变，杜绝滚动漂移 */
+.reader-stitch-page {
+  width: 100%;              /* 实际宽度由内联 zoom% 覆盖 */
+  max-width: 100%;
+  aspect-ratio: 0.7;        /* 宽:高，漫画页通用比例 */
+  flex-shrink: 0;           /* 不被 flex 压缩 */
+  margin: 0 auto;
+  display: block;
+}
+
+.reader-stitch-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* 窗口化渲染：内层固定总高（= 页数 × 固定页高），位移通过 transform:translate3d 施加
+   （GPU 合成，开启硬件加速），不使用 scrollTop；will-change 提示浏览器单独合成层。 */
+.reader-stitch-inner {
+  position: relative;
+  width: 100%;
+  flex-shrink: 0;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+}
+
+/* 每页绝对定位到 i*slotH 处，挂载/卸载不影响 scrollHeight */
+.reader-stitch-slot {
+  position: absolute;
+  left: 0;
+  width: 100%;
+}
+
+/* ── 懒加载占位 ── */
+/* 单/双页占位：外观与页面一致，居中显示"加载中…"，避免预取间隙出现空白 */
+.reader-page-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #1c1d1f, #141517);
+  color: rgba(233, 232, 239, 0.45);
+  font-size: 14px;
+  letter-spacing: 1px;
+  user-select: none;
+}
+
+.reader-spread .reader-page-placeholder {
+  max-width: 50%;
+}
+
+/* 滚动（拼接）模式占位：用 aspect-ratio 模拟漫画页高度，
+   加载前就有正确高度，图片加载后布局几乎不变 */
+.reader-stitch-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 0.7;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #1c1d1f, #141517);
+  color: rgba(233, 232, 239, 0.45);
+  font-size: 14px;
+  letter-spacing: 1px;
+  border-radius: 4px;
+  user-select: none;
+}
+
+/* 加载失败：可点击重试（避免永久停在"加载中"） */
+.reader-page-failed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #2a1f1f, #1c1414);
+  color: rgba(255, 180, 180, 0.85);
+  font-size: 14px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.reader-spread .reader-page-failed {
+  max-width: 50%;
+}
+
+.reader-stitch-failed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 0.7;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #2a1f1f, #1c1414);
+  color: rgba(255, 180, 180, 0.85);
+  font-size: 14px;
+  letter-spacing: 1px;
+  border-radius: 4px;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* ═══ 调试面板（定位“一直加载中”） ═══ */
+.reader-debug-panel {
+  position: fixed;
+  top: 56px;
+  right: 12px;
+  z-index: 1000;
+  min-width: 260px;
+  padding: 12px 14px;
+  background: rgba(20, 20, 24, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: rgba(233, 232, 239, 0.9);
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  line-height: 1.7;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+.reader-debug-title {
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #fff;
+}
+.reader-debug-panel button {
+  margin-top: 8px;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+}
+.reader-debug-panel button:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* ═══ 沉浸模式页码 ═══ */
+.reader-immersive-pagenum {
+  position: fixed;
+  bottom: 16px;
+  right: 20px;
+  font-size: 11px;
+  color: rgba(233, 232, 239, 0.25);
+  font-variant-numeric: tabular-nums;
+  z-index: 5;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ═══ 缩放百分比气泡 ═══ */
+.reader-zoom-toast {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 120;
+  animation: reader-zoom-toast-in 140ms ease-out both;
+}
+.reader-zoom-toast-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 24px 14px;
+  border-radius: 14px;
+  background: rgba(22, 23, 25, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  color: #F3F2F7;
+  min-width: 140px;
+}
+.reader-zoom-toast-label {
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: rgba(233, 232, 239, 0.55);
+  font-weight: 500;
+}
+.reader-zoom-toast-value {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: #ffffff;
+}
+
+@keyframes reader-zoom-toast-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ═══ 底部状态栏 ═══ */
+.reader-bottombar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 24px;
+  background: rgba(11, 12, 12, 0.55);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  backdrop-filter: blur(14px) saturate(1.2);
+  border-top: 1px solid rgba(233, 232, 239, 0.06);
+  z-index: 21;
+  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(100%);
+}
+
+.reader-bottombar.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.reader-bottom-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(233, 232, 239, 0.1);
+  color: #E9E8EF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+.reader-bottom-btn:hover {
+  background: rgba(233, 232, 239, 0.2);
+  transform: scale(1.05);
+}
+
+/* ── 进度条 ── */
+.reader-progress {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.reader-progress-track {
+  flex: 1;
+  height: 6px;
+  position: relative;
+  border-radius: 999px;
+  background: rgba(233, 232, 239, 0.1);
+}
+
+.reader-progress-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: #4A90D9;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.reader-slider {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  margin: 0;
+}
+
+.reader-progress-text {
+  font-size: 12px;
+  color: rgba(233, 232, 239, 0.7);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 60px;
+  text-align: right;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s ease;
+}
+
+.reader-progress-text:hover {
+  color: #E9E8EF;
+}
+
+/* ═══════════════════════════════════════════
+   翻页动效
+   ═══════════════════════════════════════════ */
+
+/* ── 滑入 ── */
+.anim-slide.anim-next {
+  animation: slideInNext 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.anim-slide.anim-prev {
+  animation: slideInPrev 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideInNext {
+  0% { transform: translateX(60px); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideInPrev {
+  0% { transform: translateX(-60px); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+/* ── 仿真翻书（3D rotateY） ── */
+.anim-flip.anim-next {
+  animation: flipInNext 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: left center;
+}
+
+.anim-flip.anim-prev {
+  animation: flipInPrev 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: right center;
+}
+
+@keyframes flipInNext {
+  0% { transform: perspective(1500px) rotateY(-80deg); opacity: 0.2; }
+  50% { opacity: 0.8; }
+  100% { transform: perspective(1500px) rotateY(0deg); opacity: 1; }
+}
+
+@keyframes flipInPrev {
+  0% { transform: perspective(1500px) rotateY(80deg); opacity: 0.2; }
+  50% { opacity: 0.8; }
+  100% { transform: perspective(1500px) rotateY(0deg); opacity: 1; }
+}
+
+/* ── 无动效 ── */
+.anim-none {
+  animation: none;
+}
+
+/* ═══════════════════════════════════════════
+   迷你书库
+   ═══════════════════════════════════════════ */
+.mini-library-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 19;
+}
+
+.mini-library {
+  position: fixed;
+  left: 16px;
+  bottom: 96px;
+  z-index: 20;
+  max-width: calc(100vw - 32px);
+  box-sizing: border-box;
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  background: rgba(20, 21, 22, 0.96);
+  border: 1px solid rgba(233, 232, 239, 0.1);
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  animation: miniLibIn 0.2s ease-out;
+}
+
+@keyframes miniLibIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.mini-library-covers {
+  display: flex;
+  gap: 10px;
+  max-width: 360px;
+  padding-bottom: 12px; /* 给水平胶囊滚动条留出显示空间 */
+}
+
+.mini-library-cover {
+  flex-shrink: 0;
+  width: 90px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: transform 0.15s ease;
+}
+
+.mini-library-cover:hover {
+  transform: translateY(-3px);
+}
+
+.mini-library-cover.active .mini-library-cover-img {
+  box-shadow: 0 0 0 2px #4A90D9;
+}
+
+.mini-library-cover-img {
+  width: 90px;
+  height: 130px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #2d3140, #1a1d25);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mini-library-cover-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mini-library-cover-placeholder {
+  color: rgba(233, 232, 239, 0.6);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.mini-library-cover-title {
+  font-size: 11px;
+  color: rgba(233, 232, 239, 0.7);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mini-library-more-btn {
+  flex-shrink: 0;
+  width: 56px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(233, 232, 239, 0.08);
+  color: #E9E8EF;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 11px;
+  font-family: inherit;
+  transition: background 0.15s ease;
+}
+
+.mini-library-more-btn:hover {
+  background: rgba(233, 232, 239, 0.16);
+}
+
+/* ═══════════════════════════════════════════
+   网格书库（5×5）
+   ═══════════════════════════════════════════ */
+.grid-library-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.grid-library {
+  width: 720px;
+  max-width: 90vw;
+  max-height: 80vh;
+  background: rgba(20, 21, 22, 0.98);
+  border: 1px solid rgba(233, 232, 239, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: gridIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes gridIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.grid-library-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #E9E8EF;
+  border-bottom: 1px solid rgba(233, 232, 239, 0.06);
+}
+
+.grid-library-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(233, 232, 239, 0.08);
+  color: #E9E8EF;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+}
+
+.grid-library-close:hover {
+  background: rgba(233, 232, 239, 0.18);
+}
+
+.grid-library-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  padding: 20px;
+  align-content: start;
+}
+
+.grid-library-item {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  transition: transform 0.15s ease;
+}
+
+.grid-library-item:hover {
+  transform: translateY(-3px);
+}
+
+.grid-library-item.active .grid-library-cover {
+  box-shadow: 0 0 0 2px #4A90D9;
+}
+
+/* 用 padding-bottom 技巧强制 2:3 统一封面高，避免 aspect-ratio 在 grid/flex 中偶发失效 */
+.grid-library-cover {
+  position: relative;
+  width: 100%;
+  height: 0;
+  padding-bottom: 150%;
+  border-radius: 6px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #2d3140, #1a1d25);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+.grid-library-cover img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.grid-library-cover-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(233, 232, 239, 0.6);
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.grid-library-title {
+  font-size: 11px;
+  color: rgba(233, 232, 239, 0.7);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════
+   设置面板
+   ═══════════════════════════════════════════ */
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 19;
+}
+
+.settings-panel {
+  position: fixed;
+  bottom: 96px;
+  right: 16px;
+  z-index: 20;
+  width: 280px;
+  max-width: calc(100vw - 32px);
+  box-sizing: border-box;
+  background: rgba(20, 21, 22, 0.98);
+  border: 1px solid rgba(233, 232, 239, 0.1);
+  border-radius: 14px;
+  padding: 14px 12px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: settingsIn 0.2s ease-out;
+  transform-origin: bottom right;
+}
+
+@keyframes settingsIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.settings-label {
+  font-size: 11px;
+  color: rgba(233, 232, 239, 0.7);
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 44px;
+}
+
+.settings-btns {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.settings-btn {
+  height: 24px;
+  padding: 0 6px;
+  border: 1px solid rgba(233, 232, 239, 0.1);
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(233, 232, 239, 0.7);
+  cursor: pointer;
+  font-size: 10px;
+  font-family: inherit;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.settings-btn:hover {
+  background: rgba(233, 232, 239, 0.08);
+  color: #E9E8EF;
+}
+
+.settings-btn.active {
+  background: rgba(74, 144, 217, 0.2);
+  border-color: rgba(74, 144, 217, 0.5);
+  color: #9AC4F2;
+}
+
+.settings-value {
+  font-size: 11px;
+  color: #E9E8EF;
+  font-variant-numeric: tabular-nums;
+  min-width: 36px;
+  text-align: center;
+  padding: 0 2px;
+}
+
+/* ═══ 自动连播（阅读设置面板顶部独立模块）═══ */
+.autoplay-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(233, 232, 239, 0.08);
+}
+
+.autoplay-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.autoplay-title {
+  font-size: 12px;
+  color: #E9E8EF;
+  flex: 1;
+}
+
+.autoplay-switch {
+  width: 36px;
+  height: 20px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(233, 232, 239, 0.15);
+  position: relative;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+
+.autoplay-switch.active {
+  background: rgba(74, 144, 217, 0.85);
+}
+
+.autoplay-switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.autoplay-switch.active .autoplay-switch-thumb {
+  transform: translateX(16px);
+}
+
+.autoplay-chevron {
+  color: rgba(233, 232, 239, 0.5);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.autoplay-section.expanded .autoplay-chevron {
+  transform: rotate(180deg);
+}
+
+.autoplay-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: settingsIn 0.2s ease-out;
+}
+
+.autoplay-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.autoplay-label {
+  font-size: 11px;
+  color: rgba(233, 232, 239, 0.7);
+  flex-shrink: 0;
+}
+
+.autoplay-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.autoplay-control input[type="range"] {
+  width: 110px;
+  height: 3px;
+  accent-color: rgba(74, 144, 217, 0.85);
+  padding: 0;
+  margin: 0;
+}
+
+.autoplay-value {
+  font-size: 11px;
+  color: #E9E8EF;
+  min-width: 56px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.autoplay-hint {
+  font-size: 10px;
+  color: rgba(233, 232, 239, 0.45);
+  text-align: right;
+}
+
+/* ═══════════════════════════════════════════
+   页码跳转弹窗（紧贴进度条数字，不遮挡漫画）
+   ═══════════════════════════════════════════ */
+.jump-popover {
+  position: fixed;
+  bottom: 96px;
+  right: 16px;
+  z-index: 22;
+  background: rgba(20, 21, 22, 0.98);
+  border: 1px solid rgba(233, 232, 239, 0.1);
+  border-radius: 14px;
+  padding: 14px 16px;
+  width: 196px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #E9E8EF;
+  text-align: left;
+  pointer-events: auto;
+  transform-origin: bottom right;
+  animation: jumpIn 0.2s ease-out;
+}
+
+@keyframes jumpIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.jump-title {
+  font-size: 12px;
+  color: #E9E8EF;
+  margin-bottom: 10px;
+}
+
+.jump-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.jump-input {
+  flex: 1;
+  min-width: 0;
+  background: rgba(233, 232, 239, 0.08);
+  border: 1px solid rgba(233, 232, 239, 0.1);
+  border-radius: 6px;
+  color: #E9E8EF;
+  font-size: 14px;
+  padding: 6px 8px;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+}
+
+.jump-input:focus {
+  border-color: #4A90D9;
+}
+
+.jump-total {
+  font-size: 13px;
+  color: rgba(233, 232, 239, 0.6);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.jump-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.jump-btn {
+  height: 24px;
+  padding: 0 12px;
+  border: 1px solid rgba(233, 232, 239, 0.1);
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(233, 232, 239, 0.7);
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.jump-btn:hover {
+  background: rgba(233, 232, 239, 0.08);
+  color: #E9E8EF;
+}
+
+.jump-btn.primary {
+  background: rgba(74, 144, 217, 0.2);
+  border-color: rgba(74, 144, 217, 0.5);
+  color: #9AC4F2;
+}
+
+.jump-btn.primary:hover {
+  background: rgba(74, 144, 217, 0.3);
+  color: #9AC4F2;
+}

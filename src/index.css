@@ -1,0 +1,38 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #1E2020;
+  color: #E9E8EF;
+  user-select: none;
+}
+
+/* ══ 全局隐藏原生滚动条 ══
+   应用内统一使用 CustomScrollbar 组件或阅读器自绘滚动条；
+   原生滚动条（尤其是 Windows / Electron Chromium 的 Fluent 粗条）会
+   与自绘胶囊条并存形成双条，因此全局隐藏。 */
+::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+* {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}

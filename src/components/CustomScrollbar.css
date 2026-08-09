@@ -1,0 +1,106 @@
+/* 通用胶囊滚动条：自绘 8px 圆角 thumb，彻底绕过原生滚动条 */
+
+.custom-scrollbar {
+  position: relative;
+  overflow: hidden;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+
+.custom-scrollbar--vertical {
+  flex-direction: row;
+}
+
+.custom-scrollbar--horizontal {
+  flex-direction: column;
+}
+
+.custom-scrollbar-content {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  /* 保留原生滚动能力作为 fallback，再用下面 CSS 彻底隐藏原生滚动条。
+     这样 JS 平滑滚动失效时，用户仍能滚动；同时不会出现双滚动条或挤压布局。 */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.custom-scrollbar-content::-webkit-scrollbar {
+  display: none;
+}
+
+.custom-scrollbar-content--vertical {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* 水平方向：完全禁用原生横向滚动，统一由 JS 控制 scrollLeft。
+   overflow-x:hidden 的元素仍然可以设置 scrollLeft，因此滚轮/拖拽/点击轨道依旧可用，
+   同时彻底杜绝双滚动条。 */
+.custom-scrollbar-content--horizontal {
+  overflow-y: hidden;
+  overflow-x: hidden;
+}
+
+.custom-scrollbar-bar {
+  position: absolute;
+  pointer-events: auto;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  z-index: 100;
+}
+
+.custom-scrollbar-bar.is-visible {
+  opacity: 1;
+}
+
+.custom-scrollbar-bar--vertical {
+  top: 0;
+  right: 0;
+  width: 5px;
+  height: 100%;
+}
+
+.custom-scrollbar-bar--horizontal {
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 5px;
+}
+
+.custom-scrollbar-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border-radius: 999px;
+}
+
+.custom-scrollbar-thumb {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background-color: rgba(233, 232, 239, 0.22);
+  border-radius: 999px;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: background-color 0.15s ease;
+}
+
+.custom-scrollbar-thumb:hover {
+  background-color: rgba(233, 232, 239, 0.38);
+}
+
+.custom-scrollbar-thumb--vertical {
+  left: 1px;
+  width: 3px;
+  min-height: 30px;
+}
+
+.custom-scrollbar-thumb--horizontal {
+  top: 1px;
+  height: 3px;
+  min-width: 30px;
+}

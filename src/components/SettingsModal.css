@@ -1,0 +1,407 @@
+/* ═══ 设置模态框样式 ═══ */
+
+.settings-modal-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+  pointer-events: auto;
+}
+
+.settings-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 10, 14, 0.55);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  pointer-events: auto;
+  transition: opacity 0.2s ease;
+}
+
+.settings-modal {
+  position: relative;
+  width: 720px;
+  height: 480px;
+  max-width: 92vw;
+  max-height: 85vh;
+  background: var(--bg-surface, #1C1E20);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--text-primary, #E8EAED);
+  animation: settings-modal-in 0.22s ease-out;
+  flex-shrink: 0;
+}
+
+@keyframes settings-modal-in {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* 头部 */
+.settings-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.settings-modal-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary, #E8EAED);
+  letter-spacing: 0.2px;
+}
+
+.settings-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted, #8A8F98);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.settings-modal-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary, #E8EAED);
+}
+
+/* 主体：左侧菜单 + 右侧内容 */
+.settings-modal-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* 左侧菜单 */
+.settings-sidebar {
+  width: 152px;
+  background: rgba(255, 255, 255, 0.02);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.settings-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  color: var(--text-muted, #8A8F98);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+  width: 100%;
+}
+
+.settings-sidebar-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary, #E8EAED);
+}
+
+.settings-sidebar-item.active {
+  background: rgba(70, 130, 220, 0.15);
+  color: var(--accent, #4A9EFF);
+}
+
+.settings-sidebar-item svg {
+  flex-shrink: 0;
+}
+
+/* 右侧内容 */
+.settings-content {
+  flex: 1;
+  padding: 24px 28px;
+}
+
+/* 通用 section */
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.settings-section-header {
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.settings-section-header h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary, #E8EAED);
+}
+
+.settings-section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* 子栏 */
+.settings-sub-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.settings-sub-section:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.settings-sub-header h4 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary, #B0B4BC);
+  letter-spacing: 0.3px;
+}
+
+.settings-hint {
+  margin: -6px 0 0 0;
+  font-size: 12px;
+  color: var(--text-muted, #8A8F98);
+  line-height: 1.5;
+}
+
+/* 设置行 */
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.settings-label {
+  font-size: 13px;
+  color: var(--text-secondary, #B0B4BC);
+  flex-shrink: 0;
+  min-width: 120px;
+}
+
+.settings-btns {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.settings-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary, #B0B4BC);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.settings-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary, #E8EAED);
+}
+
+.settings-btn.active {
+  background: rgba(70, 130, 220, 0.18);
+  border-color: rgba(70, 130, 220, 0.4);
+  color: var(--accent, #4A9EFF);
+}
+
+.settings-btn-secondary {
+  padding: 8px 18px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary, #B0B4BC);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.settings-btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary, #E8EAED);
+}
+
+.settings-btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.settings-btn-danger {
+  padding: 10px 22px;
+  border-radius: 8px;
+  border: 1px solid rgba(230, 80, 80, 0.35);
+  background: rgba(230, 80, 80, 0.12);
+  color: #F07070;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.settings-btn-danger:hover:not(:disabled) {
+  background: rgba(230, 80, 80, 0.22);
+  border-color: rgba(230, 80, 80, 0.55);
+}
+
+.settings-btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.settings-value {
+  min-width: 48px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  color: var(--text-primary, #E8EAED);
+  padding: 4px 8px;
+}
+
+/* 数据 section */
+.settings-data-notice {
+  font-size: 13px;
+  color: var(--accent, #4A9EFF);
+  background: rgba(74, 158, 255, 0.08);
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin: 0;
+  border-left: 3px solid rgba(74, 158, 255, 0.4);
+}
+
+.settings-data-desc {
+  font-size: 12px;
+  color: var(--text-muted, #8A8F98);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.settings-danger-row {
+  margin-top: 4px;
+}
+
+/* 确认框 */
+.settings-confirm-box {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  background: rgba(230, 80, 80, 0.08);
+  border-radius: 10px;
+  border: 1px solid rgba(230, 80, 80, 0.2);
+}
+
+.settings-confirm-text {
+  font-size: 13px;
+  color: #F0A0A0;
+  margin: 0;
+}
+
+.settings-confirm-btns {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+/* 删除中 spinner */
+.settings-deleting-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(230, 80, 80, 0.08);
+  border-radius: 10px;
+  border: 1px solid rgba(230, 80, 80, 0.2);
+}
+
+.settings-deleting-spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid rgba(240, 112, 112, 0.2);
+  border-top-color: #F07070;
+  animation: settings-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+.settings-deleting-text {
+  font-size: 13px;
+  color: #F0A0A0;
+}
+
+@keyframes settings-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 关于 section */
+.settings-about-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.settings-about-row:last-child {
+  border-bottom: none;
+}
+
+.settings-about-label {
+  font-size: 13px;
+  color: var(--text-muted, #8A8F98);
+}
+
+.settings-about-value {
+  font-size: 13px;
+  color: var(--text-primary, #E8EAED);
+  font-variant-numeric: tabular-nums;
+}
+
+.settings-about-placeholder {
+  color: var(--text-muted, #8A8F98);
+  font-style: italic;
+}
+
+.settings-update-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-update-available {
+  font-size: 13px;
+  color: var(--accent, #4A9EFF);
+  background: rgba(74, 158, 255, 0.1);
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+

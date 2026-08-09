@@ -1,0 +1,40 @@
+.backdrop-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* 默认主题背景：与当前暗色主题协调的渐变 */
+.backdrop-default {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 10%, rgba(45, 48, 56, 0.55) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 90%, rgba(30, 32, 32, 0.85) 0%, transparent 50%),
+    linear-gradient(160deg, #1E2020 0%, #181A1A 100%);
+}
+
+/* 悬停封面背景：大幅模糊 + 放大，填满容器 */
+.backdrop-image {
+  position: absolute;
+  inset: -10%;
+  background-size: cover;
+  background-position: center;
+  filter: blur(48px) brightness(0.65) saturate(1.1);
+  transform: scale(1.15);
+  opacity: 0;
+  transition: opacity 0.45s ease;
+}
+
+.backdrop-image.is-visible {
+  opacity: 1;
+}
+
+/* 暗色遮罩：压暗背景，确保前景封面与文字清晰 */
+.backdrop-dim {
+  position: absolute;
+  inset: 0;
+  background: rgba(12, 13, 14, 0.62);
+}
