@@ -36,6 +36,7 @@
   "build": {
     "appId": "com.easycomic.app",
     "productName": "EasyComic",
+    "icon": "build/icon.ico",
     "directories": {
       "output": "release"
     },

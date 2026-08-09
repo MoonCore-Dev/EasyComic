@@ -265,11 +265,17 @@ function SettingsModal({ open, onClose, onAllDataCleared }: SettingsModalProps) 
                   </div>
                   <div className="settings-about-row">
                     <span className="settings-about-label">开发者</span>
-                    <span className="settings-about-value settings-about-placeholder">暂留空</span>
+                    <span className="settings-about-value">MoonCore-Dev</span>
                   </div>
                   <div className="settings-about-row">
                     <span className="settings-about-label">版本</span>
                     <span className="settings-about-value">{version}</span>
+                  </div>
+                  <div className="settings-about-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
+                    <span className="settings-about-label">免责声明</span>
+                    <p className="settings-about-value" style={{ fontSize: 12, lineHeight: 1.6, opacity: 0.9, margin: 0 }}>
+                      本软件仅用于个人合法拥有的漫画内容阅读，不提供任何漫画资源，不鼓励或支持盗版。用户使用本软件阅读非授权内容产生的法律风险由用户自行承担，开发者不承担任何责任。
+                    </p>
                   </div>
                   <div className="settings-about-row">
                     <span className="settings-about-label">更新</span>
