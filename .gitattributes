@@ -1,0 +1,16 @@
+# 统一所有文本文件使用 LF 换行符，避免 Windows / macOS / Linux 之间的换行符差异
+# 这样 GitHub 不再提示 LF↔CRLF 转换，协作时 diff 也干净
+* text=auto eol=lf
+
+# 明确声明这些不是文本文件，Git 不做换行符转换
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.gif binary
+*.zip binary
+*.exe binary
+*.7z binary
+*.ttf binary
+*.woff binary
+*.woff2 binary

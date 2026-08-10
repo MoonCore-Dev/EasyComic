@@ -10,6 +10,7 @@ import { CoverResolver } from './components/CoverResolver'
 import BackdropLayer from './components/BackdropLayer'
 import CustomScrollbar from './components/CustomScrollbar'
 import { useComicLibrary } from './comic/useComicLibrary'
+import { flushPendingWrites } from './comic/usePersisted'
 import { useHomeSettings } from './comic/useHomeSettings'
 import { ToastProvider, useToast } from './store/toast'
 import type { ViewType, LoadedComic, Comic } from './types/comic'
@@ -152,8 +153,10 @@ function AppInner() {
       if (!loaded) return
 
       const rawProgress = Number.isFinite(loaded.comic.progress) ? loaded.comic.progress : 0
+      // 修复：markProgress 保存的是 (pageIndex + 1) / total，恢复时应使用 round(total * p) - 1。
+      // 原 Math.floor 会导致第 1 页恢复成第 2 页、且浮点误差下时前时后。
       const start = loaded.comic.pageCount > 0
-        ? Math.max(0, Math.min(loaded.comic.pageCount - 1, Math.floor(rawProgress * loaded.comic.pageCount)))
+        ? Math.max(0, Math.min(loaded.comic.pageCount - 1, Math.round(rawProgress * loaded.comic.pageCount) - 1))
         : 0
       setInitialPage(start)
       setReading(loaded)
@@ -218,6 +221,15 @@ function AppInner() {
     }
     document.addEventListener('mousedown', onDocClick)
     return () => document.removeEventListener('mousedown', onDocClick)
+  }, [])
+
+  // 关闭窗口前立即刷盘，避免进度写入因 120ms 缓冲未落盘而丢失
+  useEffect(() => {
+    const onBeforeUnload = () => {
+      flushPendingWrites()
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
   }, [])
 
   // Esc 打断阅读器加载 + capture 级 mousedown 兜底（防止 app-region drag 吞掉"返回"按钮点击）

@@ -13,7 +13,7 @@ interface SettingsModalProps {
   onAllDataCleared: () => void
 }
 
-const GITHUB_REPO = 'MoonCore-Dev/easy-comic'
+const GITHUB_REPO = 'MoonCore-Dev/EasyComic'
 
 function SettingsModal({ open, onClose, onAllDataCleared }: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState<SettingsTab>('general')
@@ -336,6 +336,23 @@ function SettingsModal({ open, onClose, onAllDataCleared }: SettingsModalProps) 
                       }}
                     >
                       重启
+                    </button>
+                  </div>
+                  <div className="settings-about-row">
+                    <span className="settings-about-label">反馈问题</span>
+                    <button
+                      className="settings-btn-secondary"
+                      onClick={() => {
+                        const api = (window as any).electronAPI
+                        const url = `https://github.com/${GITHUB_REPO}/issues/new`
+                        if (api?.app?.openExternal) {
+                          api.app.openExternal(url)
+                        } else {
+                          window.open(url, '_blank')
+                        }
+                      }}
+                    >
+                      反馈问题
                     </button>
                   </div>
                   <div className="settings-about-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>

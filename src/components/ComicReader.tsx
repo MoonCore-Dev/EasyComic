@@ -6,6 +6,7 @@ import { useReaderSettings, type ReaderUpdateFn } from '../comic/useReaderSettin
 import { useAutoPlaySettings } from '../comic/useAutoPlaySettings'
 import { CoverResolver } from './CoverResolver'
 import { createDemoPage } from '../comic/useComicLibrary'
+import { flushPendingWrites } from '../comic/usePersisted'
 import CustomScrollbar from './CustomScrollbar'
 import './ComicReader.css'
 
@@ -371,6 +372,11 @@ function ComicReader({
     cancelledRef.current = false
     return () => {
       cancelledRef.current = true
+      preloadAbortRef.current?.abort()
+      if (seekTimeoutRef.current !== null) {
+        window.clearTimeout(seekTimeoutRef.current)
+        seekTimeoutRef.current = null
+      }
       if (debugRevealTimerRef.current !== null) {
         window.clearTimeout(debugRevealTimerRef.current)
         debugRevealTimerRef.current = null
@@ -453,39 +459,56 @@ function ComicReader({
     loadPageData(index, true)
   }, [loadPageData, refreshFailed])
 
-  // 预加载所有页：当前页优先，其余按距当前页距离并发加载。
-  // 用户要求"每一页都能衔接顺畅"，因此默认预加载整本书，但保留按需 IPC 避免单条消息过大。
-  const preloadTaskRef = useRef<Promise<void> | null>(null)
+  // 预加载窗口：只加载当前页附近一个小窗口，避免大漫画一次性加载全部导致 OOM / 卡死。
+  // 新的 ensureWindow 会取消上一个未完成的窗口加载，保证拖拽进度条后能立即加载当前页。
+  const preloadGenRef = useRef(0)
+  const preloadAbortRef = useRef<AbortController | null>(null)
   const ensureWindow = useCallback((center: number) => {
     const pc = pageCountRef.current
     if (!Number.isFinite(center) || center < 0 || center >= pc) return
-    if (preloadTaskRef.current) return
-    preloadTaskRef.current = (async () => {
-      // 优先加载当前页并等待完成，保证翻页后当前页立即可用。
-      // 若当前页已加载且未失败，则不再强制重新请求（避免翻页时重复 IPC）。
+
+    // 取消旧窗口加载任务，避免旧任务阻塞新位置
+    preloadAbortRef.current?.abort()
+    const controller = new AbortController()
+    preloadAbortRef.current = controller
+    const signal = controller.signal
+    const gen = ++preloadGenRef.current
+
+    const run = async () => {
+      // 1. 先加载当前页并等待完成，保证翻页/跳转后目标页立即可见
       await loadPageData(center, failedRef.current.has(center))
-      // 构造按距离排序的索引列表
-      const order: number[] = []
-      for (let d = 1; d < pc; d++) {
-        if (center - d >= 0) order.push(center - d)
-        if (center + d < pc) order.push(center + d)
-      }
-      // 并发控制：每次最多 3 个，避免 IPC 拥堵
+      if (signal.aborted || gen !== preloadGenRef.current) return
+
+      // 2. 只预加载附近小窗口：靠前 2 页、靠后 5 页
+      //    大幅减少内存占用与 IPC 压力，大漫画不再卡死。
+      const WINDOW_BEHIND = 2
+      const WINDOW_AHEAD = 5
       const CONCURRENCY = 3
+      const indices: number[] = []
+      for (let d = 1; d <= Math.max(WINDOW_BEHIND, WINDOW_AHEAD); d++) {
+        if (d <= WINDOW_BEHIND && center - d >= 0) indices.push(center - d)
+        if (d <= WINDOW_AHEAD && center + d < pc) indices.push(center + d)
+      }
+
       let i = 0
       const running = new Set<Promise<void>>()
-      while (i < order.length || running.size > 0) {
-        while (running.size < CONCURRENCY && i < order.length) {
-          const idx = order[i++]
+      while (i < indices.length || running.size > 0) {
+        while (running.size < CONCURRENCY && i < indices.length) {
+          const idx = indices[i++]
           const p = loadPageData(idx).finally(() => running.delete(p))
           running.add(p)
         }
         if (running.size > 0) {
           await Promise.race(running)
         }
+        if (signal.aborted || gen !== preloadGenRef.current) return
       }
-    })().finally(() => {
-      preloadTaskRef.current = null
+    }
+
+    run().finally(() => {
+      if (preloadAbortRef.current === controller) {
+        preloadAbortRef.current = null
+      }
     })
   }, [loadPageData])
 
@@ -515,8 +538,11 @@ function ComicReader({
 
   // 窗口随当前页变化而预取/释放（放在 pageIndex 声明之后，避免 TDZ 报错）
   useEffect(() => {
+    // 拼接模式下拖动底部进度条时，由 handleSeek / pointerUp 统一提交加载，
+    // 避免拖动过程中每一帧都触发 ensureWindow 导致卡死。
+    if (settings.mode === 'stitch' && seekingRef.current) return
     ensureWindow(pageIndex)
-  }, [pageIndex, ensureWindow])
+  }, [pageIndex, ensureWindow, settings.mode])
 
   // 通用设置：常显诊断面板
   useEffect(() => {
@@ -579,6 +605,8 @@ function ComicReader({
   // ─── Refs ───
   const pageRef = useRef(pageIndex)
   pageRef.current = pageIndex
+  // 进入 / 切换漫画（含切到滚动模式）期间为 true：阻止初始 pos=0 的 onFrame 把当前页重置为第 0 页。
+  const enteringRef = useRef(false)
   // 标记是否发生过「翻页」：仅真正翻页时播放翻页动效，进入漫画/换书时不播放（避免入场微幅抽动）
   const turnedRef = useRef(false)
   const onPageChangeRef = useRef(onPageChange)
@@ -608,6 +636,8 @@ function ComicReader({
   const progressTextRef = useRef<HTMLSpanElement>(null)
   // 拼接模式状态：用户正在拖拽底部滑块时不回写滑块值，避免与拖拽打架
   const seekingRef = useRef(false)
+  // 进度条拖动：延迟提交目标页，避免拖动过程中每像素都触发加载
+  const seekTimeoutRef = useRef<number | null>(null)
   // ─── 拼接模式：窗口化渲染 + 固定高度槽位（根除加载漂移 & 切模式卡顿）───
   const STITCH_ASPECT = 0.7 // 宽:高（漫画页通用比例），用于由容器宽度推算固定页高
   const [slotH, setSlotH] = useState(0)          // 每页固定高度（px），占位/加载/失败完全一致
@@ -935,6 +965,8 @@ function ComicReader({
   useEffect(() => {
     return () => {
       onPageChangeRef.current?.(pageRef.current)
+      // 退出阅读器时立即刷盘，避免 120ms 缓冲导致进度丢失
+      flushPendingWrites()
     }
   }, [])
 
@@ -982,7 +1014,8 @@ function ComicReader({
     }
 
     // 页码 + 可视窗口随滚动位置更新（替代旧的 onScroll 派生）
-    if (topPage !== pageRef.current) setPageIndex(topPage)
+    // enteringRef 期间（切到滚动模式 / 换书的初始定位）不回写页码，避免初始 pos=0 把当前页重置为第 0 页。
+    if (!enteringRef.current && topPage !== pageRef.current) setPageIndex(topPage)
     const visible = Math.ceil(trackHeight / sh)
     const topIdx = Math.floor(pos / sh)
     const start = Math.max(0, topIdx - 3)
@@ -1086,6 +1119,8 @@ function ComicReader({
     const inner = stitchInnerRef.current
     const container = stitchRef.current
     if (!inner || !container) return
+    // 进入 / 切换定位期间，初始 onFrame(pos=0) 不应把当前页重置为第 0 页
+    enteringRef.current = true
     const scroller = createStitchScroller({
       inner,
       // 每帧把滚动位置同步到滚动条 / 进度条 / 页码，并标记滚动活跃（闲置自动隐藏）
@@ -1110,6 +1145,7 @@ function ComicReader({
     const h = measureSlotH()
     const pc = pageCountRef.current
     const vh = container.clientHeight
+    enteringRef.current = true
     requestAnimationFrame(() => {
       s.setMetrics(Math.max(1, pc) * h, vh)
       const initPos = Math.min(Math.max(0, pc * h - vh), pageRef.current * h)
@@ -1118,6 +1154,7 @@ function ComicReader({
       const topIdx = Math.floor(s.getPos() / sh)
       const visible = Math.ceil(vh / sh)
       setView({ start: Math.max(0, topIdx - 3), end: Math.min(pc - 1, topIdx + visible + 3) })
+      enteringRef.current = false
     })
     // 依赖不含 measureSlotH：缩放不应重新触发"进入/切换"定位（否则跳回当前页顶）。
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1209,9 +1246,11 @@ function ComicReader({
     s.scrollToPosition(ratio * s.getMaxScroll())
   }, [])
 
-  // 拖拽进度条（滑块）：拼接模式 = 即时定位到对应页（页码式）；其它模式 = 跳到对应页
+  // 拖拽进度条（滑块）：拼接模式即时滚动、延迟加载；其它模式延迟翻页，避免拖动中卡死
   const handleSeek = useCallback((ratio: number) => {
     const r = Math.max(0, Math.min(1, ratio))
+    if (seekTimeoutRef.current) window.clearTimeout(seekTimeoutRef.current)
+
     if (settings.mode === 'stitch') {
       const s = scrollerRef.current
       if (s) {
@@ -1220,12 +1259,20 @@ function ComicReader({
         const sh = slotHRef.current || 1
         s.scrollToImmediate(targetPage * sh)
       }
+      // 拖拽停止一段时间后再加载附近页，拖动过程中不触发 ensureWindow
+      seekTimeoutRef.current = window.setTimeout(() => {
+        seekTimeoutRef.current = null
+        ensureWindow(pageRef.current)
+      }, 150)
     } else {
-      const target = Math.round(r * Math.max(1, pageCount - 1))
-      setDirection(target >= pageRef.current ? 1 : -1)
-      setPageIndex(Math.max(0, Math.min(pageCount - 1, target)))
+      seekTimeoutRef.current = window.setTimeout(() => {
+        seekTimeoutRef.current = null
+        const target = Math.round(r * Math.max(1, pageCount - 1))
+        setDirection(target >= pageRef.current ? 1 : -1)
+        setPageIndex(Math.max(0, Math.min(pageCount - 1, target)))
+      }, 80)
     }
-  }, [settings.mode, pageCount])
+  }, [settings.mode, pageCount, ensureWindow])
 
   // ─── 快速换书 ───
   const handleSwitchComic = useCallback((id: string) => {
@@ -1456,6 +1503,22 @@ function ComicReader({
               onPointerDown={() => { seekingRef.current = true }}
               onPointerUp={() => {
                 seekingRef.current = false
+                if (seekTimeoutRef.current) {
+                  window.clearTimeout(seekTimeoutRef.current)
+                  seekTimeoutRef.current = null
+                }
+                // 立即提交最终位置并加载当前页
+                const slider = progressSliderRef.current
+                if (slider) {
+                  const r = Number(slider.value)
+                  if (settings.mode === 'stitch') {
+                    ensureWindow(pageRef.current)
+                  } else {
+                    const target = Math.round(r * Math.max(1, pageCount - 1))
+                    setDirection(target >= pageRef.current ? 1 : -1)
+                    setPageIndex(Math.max(0, Math.min(pageCount - 1, target)))
+                  }
+                }
                 syncScrollNow()
               }}
               ref={progressSliderRef}

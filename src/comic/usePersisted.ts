@@ -232,3 +232,23 @@ export function usePersisted<T>(key: string, defaultValue: T): PersistedApi<T> {
 
   return { value: getCachedOrDefault(), setValue, flush, initialized }
 }
+
+/** 立即把内存中的待写入队列全部刷到磁盘（用于关闭应用/退出阅读器前保存进度） */
+export function flushPendingWrites(): void {
+  if (writeTimer != null) {
+    window.clearTimeout(writeTimer)
+    writeTimer = null
+  }
+  const queue = Array.from(pendingWrite.entries())
+  pendingWrite.clear()
+  if (queue.length === 0) return
+  void (async () => {
+    if (isElectron()) {
+      for (const [k, v] of queue) {
+        try { await (window as any).electronAPI.store.write(k, v) } catch { /* ignore */ }
+      }
+    } else {
+      for (const [k, v] of queue) { tryLSSet(k, v) }
+    }
+  })()
+}

@@ -20,5 +20,3 @@ check_css.js
 vite.config.js
 vite.config.d.ts
 
-# 开发模式 Electron 独立用户数据目录
-.dev-electron-data/
