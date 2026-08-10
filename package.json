@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "electron:dev": "concurrently --kill-others-on-fail \"vite\" \"wait-on http://localhost:5173 && tsc -p tsconfig.electron.json && cross-env NODE_ENV=development electron .\"",
+    "electron:dev": "concurrently --kill-others-on-fail \"vite\" \"wait-on http://localhost:5173 && tsc -p tsconfig.electron.json && cross-env NODE_ENV=development electron . --user-data-dir=.dev-electron-data\"",
     "electron:build": "npm run build && tsc -p tsconfig.electron.json && electron-builder"
   },
   "dependencies": {
