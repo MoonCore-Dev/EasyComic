@@ -393,8 +393,15 @@
 
 .settings-update-area {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+}
+
+.settings-update-result {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .settings-update-available {
@@ -403,5 +410,37 @@
   background: rgba(74, 158, 255, 0.1);
   padding: 6px 12px;
   border-radius: 6px;
+}
+
+.settings-update-uptodate {
+  font-size: 13px;
+  color: #5DBE8A;
+  background: rgba(93, 190, 138, 0.1);
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+.settings-update-error {
+  font-size: 13px;
+  color: #F07070;
+  background: rgba(240, 112, 112, 0.1);
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+.settings-btn-primary {
+  padding: 8px 18px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: var(--accent, #4A9EFF);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.settings-btn-primary:hover {
+  filter: brightness(1.08);
 }
 

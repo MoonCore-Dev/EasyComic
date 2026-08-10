@@ -22,6 +22,8 @@ function SettingsModal({ open, onClose, onAllDataCleared }: SettingsModalProps) 
   const [version, setVersion] = useState('1.0.0')
   const [checkingUpdate, setCheckingUpdate] = useState(false)
   const [updateAvailable, setUpdateAvailable] = useState<string | null>(null)
+  const [upToDate, setUpToDate] = useState(false)
+  const [checkError, setCheckError] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
@@ -30,6 +32,8 @@ function SettingsModal({ open, onClose, onAllDataCleared }: SettingsModalProps) 
       setActiveTab('general')
       setDeleteConfirm(false)
       setUpdateAvailable(null)
+      setUpToDate(false)
+      setCheckError(false)
       setVersion('1.0.0')
       const api = (window as any).electronAPI
       if (api?.app?.getVersion) {
@@ -61,21 +65,44 @@ function SettingsModal({ open, onClose, onAllDataCleared }: SettingsModalProps) 
     }
   }, [onAllDataCleared, onClose])
 
+  const RELEASES_URL = `https://github.com/${GITHUB_REPO}/releases/latest`
+
+  // 跳转到 GitHub Releases 页面（用系统默认浏览器打开），让用户自行下载更新
+  const handleOpenUpdate = useCallback(() => {
+    const api = (window as any).electronAPI
+    if (api?.app?.openExternal) {
+      api.app.openExternal(RELEASES_URL)
+    } else {
+      // 浏览器预览模式无 electronAPI，退回 window.open
+      window.open(RELEASES_URL, '_blank')
+    }
+  }, [])
+
   const handleCheckUpdate = useCallback(async () => {
     setCheckingUpdate(true)
     setUpdateAvailable(null)
+    setUpToDate(false)
+    setCheckError(false)
     try {
-      // 简易版本检查：直接请求 GitHub Releases API（演示）
       const resp = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`)
       if (resp.ok) {
         const data = await resp.json()
         const tag = data.tag_name?.replace(/^v/, '') ?? null
         if (tag && tag !== version) {
+          // 有更新：记录最新版本号，UI 下方显示“有最新版本 x.x.x”+ 更新按钮
           setUpdateAvailable(tag)
+        } else {
+          // 已是最新（包括没有 tag 的情况）
+          setUpToDate(true)
         }
+      } else if (resp.status === 404) {
+        // 仓库还没有发布任何 Release
+        setUpToDate(true)
+      } else {
+        setCheckError(true)
       }
     } catch {
-      setUpdateAvailable(null)
+      setCheckError(true)
     } finally {
       setCheckingUpdate(false)
     }
@@ -274,19 +301,23 @@ function SettingsModal({ open, onClose, onAllDataCleared }: SettingsModalProps) 
                   <div className="settings-about-row">
                     <span className="settings-about-label">更新</span>
                     <div className="settings-update-area">
-                      {updateAvailable ? (
-                        <span className="settings-update-available">
-                          新版本 v{updateAvailable} 可用
-                        </span>
-                      ) : (
-                        <button
-                          className="settings-btn-secondary"
-                          onClick={handleCheckUpdate}
-                          disabled={checkingUpdate}
-                        >
-                          {checkingUpdate ? '检查中...' : '检查更新'}
-                        </button>
+                      <button
+                        className="settings-btn-secondary"
+                        onClick={handleCheckUpdate}
+                        disabled={checkingUpdate}
+                      >
+                        {checkingUpdate ? '检查中...' : '检查更新'}
+                      </button>
+                      {updateAvailable && (
+                        <div className="settings-update-result">
+                          <span className="settings-update-available">有最新版本 {updateAvailable}</span>
+                          <button className="settings-btn-primary" onClick={handleOpenUpdate}>
+                            更新
+                          </button>
+                        </div>
                       )}
+                      {upToDate && <span className="settings-update-uptodate">已是最新版本</span>}
+                      {checkError && <span className="settings-update-error">检查失败，请稍后重试</span>}
                     </div>
                   </div>
                   <div className="settings-about-row">

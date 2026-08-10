@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron'
 import * as fs from 'fs'
 import * as path from 'path'
 import { readImageAsDataUrl, scanFolder, openComic, getPage, setPdfRenderer, type OpenComicResult, type ScannedComicFile, type ComicPage } from './comic-loader'
@@ -504,4 +504,12 @@ ipcMain.handle('app:restart', () => {
   if (mainWindow) mainWindow.hide()
   app.relaunch()
   app.exit(0)
+})
+
+// 打开外部链接（如 GitHub Releases 下载页），用系统默认浏览器打开。
+// 仅放行 http/https，避免任意协议被唤起。
+ipcMain.handle('app:openExternal', (_e, url: string) => {
+  if (typeof url === 'string' && /^https?:\/\//i.test(url)) {
+    shell.openExternal(url)
+  }
 })
