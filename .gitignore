@@ -19,3 +19,6 @@ check_css.js
 # tsc -b 生成的 vite 配置构建产物（真正源码是 vite.config.ts）
 vite.config.js
 vite.config.d.ts
+
+# 开发模式 Electron 独立用户数据目录
+.dev-electron-data/
