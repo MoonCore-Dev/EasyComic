@@ -112,6 +112,12 @@ function createWindow() {
 
   mainWindow.on('closed', () => {
     mainWindow = null
+    // 销毁隐藏的 PDF 渲染窗口，否则它会阻止 window-all-closed 触发，
+    // 导致主进程在后台残留（多次开关后出现多个 EasyComic 后台进程）。
+    if (pdfRendererWindow && !pdfRendererWindow.isDestroyed()) {
+      pdfRendererWindow.destroy()
+      pdfRendererWindow = null
+    }
   })
 }
 
@@ -300,6 +306,14 @@ app.whenReady().then(() => {
       createWindow()
     }
   })
+})
+
+// 双保险：退出前确保隐藏的 PDF 渲染窗口被销毁，避免主进程残留。
+app.on('before-quit', () => {
+  if (pdfRendererWindow && !pdfRendererWindow.isDestroyed()) {
+    pdfRendererWindow.destroy()
+    pdfRendererWindow = null
+  }
 })
 
 app.on('window-all-closed', () => {
