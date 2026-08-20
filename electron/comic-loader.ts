@@ -1,9 +1,23 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
+import { app } from 'electron'
 import JSZip from 'jszip'
 import * as tar from 'tar-stream'
-import { unpack as unpack7z } from '7zip-min'
+import { unpack as unpack7z, config as config7z } from '7zip-min'
+
+/** 7zip-min 在 asar 包内无法直接 spawn .exe，需要指向 electron-builder 抽出的 unpacked 路径 */
+function getSevenZipBinaryPath(): string {
+  const binaryName = process.platform === 'win32' ? '7za.exe' : '7za'
+  const platformDir = process.platform === 'win32' ? 'win' : process.platform === 'darwin' ? 'mac' : 'linux'
+  if (app.isPackaged) {
+    return path.join(__dirname, '..', '..', 'app.asar.unpacked', 'node_modules', '7zip-bin', platformDir, process.arch, binaryName)
+  }
+  // dev: dist-electron 的上一级就是项目根目录
+  return path.join(__dirname, '..', 'node_modules', '7zip-bin', platformDir, process.arch, binaryName)
+}
+
+config7z({ binaryPath: getSevenZipBinaryPath() })
 
 export interface ComicPage {
   index: number

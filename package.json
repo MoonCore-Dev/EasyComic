@@ -44,6 +44,9 @@
       "dist/**/*",
       "dist-electron/**/*"
     ],
+    "asarUnpack": [
+      "node_modules/7zip-bin/**/*"
+    ],
     "win": {
       "target": [
         {

@@ -80,7 +80,7 @@ function AppInner() {
   const CANCEL_GRACE_MS = 10 * 60 * 1000
   const loaderWrapRef = useRef<HTMLDivElement>(null)
 
-  const { showConfirm } = useToast()
+  const { showConfirm, showToast } = useToast()
   const { settings: homeSettings } = useHomeSettings()
 
   const {
@@ -92,6 +92,7 @@ function AppInner() {
     clearAllData,
     importFromFolder,
     importFromFile,
+    importFromSource,
     loadComicForReading,
     markProgress,
     clearFromRecent,
@@ -103,6 +104,65 @@ function AppInner() {
     isDemo,
     initialized: libraryInitialized
   } = useComicLibrary()
+
+  // ═══ 导入界面：拖拽导入 ═══
+  const dragDepthRef = useRef(0)
+  const [isDragging, setIsDragging] = useState(false)
+
+  const dropHasFiles = (e: React.DragEvent): boolean =>
+    Array.from(e.dataTransfer.types).includes('Files')
+
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    if (!dropHasFiles(e)) return
+    e.preventDefault()
+    dragDepthRef.current += 1
+    setIsDragging(true)
+  }, [])
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    if (!dropHasFiles(e)) return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    if (!dropHasFiles(e)) return
+    e.preventDefault()
+    dragDepthRef.current -= 1
+    if (dragDepthRef.current <= 0) {
+      dragDepthRef.current = 0
+      setIsDragging(false)
+    }
+  }, [])
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    if (!dropHasFiles(e)) return
+    e.preventDefault()
+    dragDepthRef.current = 0
+    setIsDragging(false)
+
+    const files = e.dataTransfer.files
+    const paths: string[] = []
+    for (let i = 0; i < files.length; i++) {
+      const p = (files[i] as unknown as { path?: string }).path
+      if (p) paths.push(p)
+    }
+    if (paths.length === 0) {
+      showToast(
+        isDemo
+          ? '演示模式下浏览器无法访问本地文件，请运行 npm run electron:dev 使用拖拽导入。'
+          : '未识别到可导入的内容，请将漫画文件或文件夹拖入窗口。',
+        'warning'
+      )
+      return
+    }
+    // 逐个导入（importFromSource 内部已处理成功/失败提示与去重）
+    void (async () => {
+      for (const p of paths) {
+        await importFromSource(p)
+      }
+    })()
+  }, [importFromSource, isDemo, showToast])
 
   const handleFirstViewChange = useCallback((view: ViewType) => {
     setHomeView(view)
@@ -372,13 +432,31 @@ function AppInner() {
               />
             )}
             {currentView === 'import' && (
-              <div className="import-view">
+              <div
+                className={`import-view${isDragging ? ' is-dragging' : ''}`}
+                onDragEnter={handleDragEnter}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
+                {isDragging && (
+                  <div className="import-drop-overlay">
+                    <div className="import-drop-inner">
+                      <svg width="56" height="56" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 16V4m0 0L7 9m5-5l5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      <div className="import-drop-text">将漫画文件或文件夹拖到此处导入</div>
+                      <div className="import-drop-hint">支持 CBZ / ZIP / PDF / EPUB 及图片文件夹等</div>
+                    </div>
+                  </div>
+                )}
                 <CustomScrollbar contentClassName="import-view-scroll">
                   <div className="import-view-header">
                   <div className="import-view-title-row">
                     <div>
                       <h2 className="import-view-title">导入漫画</h2>
-                      <p className="import-view-desc">选择本地文件夹或单个漫画文件添加到书库</p>
+                      <p className="import-view-desc">选择本地文件夹或单个漫画文件添加到书库，也可以直接把文件拖进窗口</p>
                     </div>
                     <div className="import-info-wrap">
                       <button

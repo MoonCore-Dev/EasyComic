@@ -195,6 +195,54 @@
   to { transform: rotate(360deg); }
 }
 
+/* 拖拽悬停高亮 */
+.import-view.is-dragging .import-view-scroll {
+  filter: saturate(0.9);
+}
+
+/* 拖放导入遮罩层 */
+.import-drop-overlay {
+  position: absolute;
+  inset: 14px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  border: 2px dashed rgba(140, 150, 255, 0.75);
+  background: rgba(18, 18, 30, 0.74);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  pointer-events: none;
+  animation: import-drop-in 0.14s ease-out;
+}
+
+@keyframes import-drop-in {
+  from { opacity: 0; transform: scale(0.99); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.import-drop-inner {
+  text-align: center;
+  color: #E9E8EF;
+}
+
+.import-drop-inner svg {
+  color: rgba(150, 160, 255, 0.95);
+  margin-bottom: 14px;
+}
+
+.import-drop-text {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.import-drop-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: rgba(233, 232, 239, 0.6);
+}
+
 .import-view code {
   background: rgba(233, 232, 239, 0.08);
   padding: 2px 7px;

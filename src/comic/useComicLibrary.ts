@@ -10,13 +10,6 @@ function getBasename(filePath: string): string {
   return parts[parts.length - 1] || filePath
 }
 
-function getParentDir(filePath: string): string {
-  const normalized = filePath.replace(/\\/g, '/')
-  const idx = normalized.lastIndexOf('/')
-  if (idx <= 0) return ''
-  return filePath.slice(0, idx)
-}
-
 /** 根据 sourcePath 把标题尾部的扩展名去掉（兼容旧数据 / 旧主进程） */
 function stripTitleExtension(title: string, sourcePath?: string): string {
   if (!sourcePath || !title) return title
@@ -529,11 +522,18 @@ export function useComicLibrary() {
     try {
       const existingPaths = new Set(comics.map((c) => c.sourcePath).filter(Boolean))
 
-      // 1. 扫描所有已导入来源的父目录，导入新增的漫画
+      // 1. 扫描所有已导入来源，导入新增的漫画
+      // 注意：只扫描明确的批量来源（batchSource）或文件夹漫画本身；
+      // 单文件漫画不要扫描其父目录，否则刷新时会导入同目录下所有文件。
       const foldersToScan = new Set<string>()
       for (const c of comics) {
         if (!c.sourcePath) continue
-        const folder = c.batchSource || getParentDir(c.sourcePath)
+        let folder: string | null = null
+        if (c.isFolder) {
+          folder = c.sourcePath
+        } else if (c.batchSource) {
+          folder = c.batchSource
+        }
         if (folder) foldersToScan.add(folder)
       }
 
