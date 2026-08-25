@@ -20,7 +20,8 @@ check_css.js
 vite.config.js
 vite.config.d.ts
 
-# === 安卓原生工程忽略规则（不影响桌面版，仅作用于 android/） ===
+# === 安卓原生工程忽略规则（移动端代码不入库，仅作用于桌面端仓库） ===
+android/
 android/.gradle/
 android/build/
 android/app/build/
