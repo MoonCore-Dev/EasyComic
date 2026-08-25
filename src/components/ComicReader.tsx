@@ -2,7 +2,7 @@ import { useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo, mem
 import { createPortal } from 'react-dom'
 import type { ComicPage } from '../vite-env.d'
 import type { Comic } from '../types/comic'
-import { useReaderSettings, type ReaderUpdateFn } from '../comic/useReaderSettings'
+import { useReaderSettings, type ReaderUpdateFn, type TurnAnimation } from '../comic/useReaderSettings'
 import { useAutoPlaySettings } from '../comic/useAutoPlaySettings'
 import { CoverResolver } from './CoverResolver'
 import { createDemoPage } from '../comic/useComicLibrary'
@@ -571,7 +571,12 @@ function ComicReader({
     }
   }, [pageIndex, pageCount, alwaysShowDebugPanel, debugPanel])
 
-  const [direction, setDirection] = useState(1) // 1=前进 -1=后退
+  // 翻页令牌：每次真实翻页自增，作为动画容器 key 强制重挂载，重启 CSS 翻页/滑入动画
+  // （同方向翻页时 class 字符串不变，浏览器不会重启动画，故用 key 变化兜底）
+  const [turnToken, setTurnToken] = useState(0)
+  // 最近一次真实翻页的动画快照（anim + dir），动画播放完毕后清空。
+  // 这样切换「翻页动效」设置时不会用新动画重播当前页；首页/尾页边界翻页也不会触发。
+  const [lastAnim, setLastAnim] = useState<{ anim: TurnAnimation; dir: 'next' | 'prev' } | null>(null)
   const [barsVisible, setBarsVisible] = useState(true)
   const [miniLibOpen, setMiniLibOpen] = useState(false)
   const [gridLibOpen, setGridLibOpen] = useState(false)
@@ -652,14 +657,22 @@ function ComicReader({
   const goToPage = useCallback((target: number, dir: 1 | -1 = 1) => {
     turnedRef.current = true
     const t = Math.max(0, Math.min(pageCount - 1, target))
-    setDirection(dir)
+    const changed = t !== pageRef.current
+    // 只有页面真正改变时才播放翻页动效；首页/尾页边界翻页不触发
+    if (changed && settings.mode !== 'stitch') {
+      setTurnToken(v => v + 1)
+      const animDir: 'next' | 'prev' = isJapanese
+        ? (dir > 0 ? 'prev' : 'next')
+        : (dir > 0 ? 'next' : 'prev')
+      setLastAnim({ anim: settings.animation, dir: animDir })
+    }
     setPageIndex(t)
     if (settings.mode === 'stitch') {
       // 页高固定，直接按页码定位（立即定位，无缓动）
       const sh = slotHRef.current || 1
       scrollerRef.current?.scrollToImmediate(t * sh)
     }
-  }, [pageCount, settings.mode])
+  }, [pageCount, settings.mode, settings.animation, isJapanese])
 
   const goNext = useCallback(() => {
     goToPage(Math.min(pageCount - 1, pageRef.current + step), 1)
@@ -668,6 +681,17 @@ function ComicReader({
   const goPrev = useCallback(() => {
     goToPage(Math.max(0, pageRef.current - step), -1)
   }, [pageCount, step, goToPage])
+
+  // 进度条/跳转等直接 setPageIndex 的地方，手动触发一次翻页动画
+  const triggerTurnAnim = useCallback((targetIndex: number, currentIndex: number) => {
+    if (settings.mode === 'stitch' || targetIndex === currentIndex) return
+    const dir = targetIndex > currentIndex ? 1 : -1
+    const animDir: 'next' | 'prev' = isJapanese
+      ? (dir > 0 ? 'prev' : 'next')
+      : (dir > 0 ? 'next' : 'prev')
+    setTurnToken(v => v + 1)
+    setLastAnim({ anim: settings.animation, dir: animDir })
+  }, [settings.mode, settings.animation, isJapanese])
 
   // ═══ 页码跳转弹窗 ═══
   const openJumpDialog = useCallback(() => {
@@ -769,11 +793,16 @@ function ComicReader({
 
       const leftKey = isJapanese ? 'ArrowRight' : 'ArrowLeft'
       const rightKey = isJapanese ? 'ArrowLeft' : 'ArrowRight'
+      const isDownNext = settings.wheelScrollDirection === 'downNext'
 
       if (e.key === leftKey || e.key === 'PageUp') {
         e.preventDefault(); goPrev()
       } else if (e.key === rightKey || e.key === 'PageDown' || e.key === ' ') {
         e.preventDefault(); goNext()
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault(); isDownNext ? goNext() : goPrev()
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault(); isDownNext ? goPrev() : goNext()
       } else if (e.key === 'Home') {
         goToPage(0, -1)
       } else if (e.key === 'End') {
@@ -782,7 +811,7 @@ function ComicReader({
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [goNext, goPrev, onClose, pageCount, isJapanese, adjustZoom, resetZoom, miniLibOpen, gridLibOpen, settingsOpen])
+  }, [goNext, goPrev, onClose, pageCount, isJapanese, settings.wheelScrollDirection, adjustZoom, resetZoom, miniLibOpen, gridLibOpen, settingsOpen])
 
   // ─── 自动连播：进入漫画默认关闭；速度值持久化，开关状态不持久化 ───
   useEffect(() => {
@@ -869,7 +898,8 @@ function ComicReader({
       wheelLastTsRef.current = now
 
       const goingNext = dir > 0
-      const actuallyNext = isJapanese ? !goingNext : goingNext
+      const isDownNext = settings.wheelScrollDirection === 'downNext'
+      const actuallyNext = isDownNext ? goingNext : !goingNext
       for (let i = 0; i < steps; i++) {
         if (actuallyNext) {
           goNext()
@@ -955,7 +985,7 @@ function ComicReader({
       window.removeEventListener('wheel', onWheel, { capture: true })
       if (rafPage !== null) window.cancelAnimationFrame(rafPage)
     }
-  }, [settings.mode, isJapanese, goNext, goPrev, adjustZoom])
+  }, [settings.mode, settings.wheelScrollDirection, goNext, goPrev, adjustZoom])
 
   // ─── 页码变更 & 卸载时保存进度 ───
   useEffect(() => {
@@ -1268,11 +1298,11 @@ function ComicReader({
       seekTimeoutRef.current = window.setTimeout(() => {
         seekTimeoutRef.current = null
         const target = Math.round(r * Math.max(1, pageCount - 1))
-        setDirection(target >= pageRef.current ? 1 : -1)
+        triggerTurnAnim(target, pageRef.current)
         setPageIndex(Math.max(0, Math.min(pageCount - 1, target)))
       }, 80)
     }
-  }, [settings.mode, pageCount, ensureWindow])
+  }, [settings.mode, pageCount, ensureWindow, triggerTurnAnim])
 
   // ─── 快速换书 ───
   const handleSwitchComic = useCallback((id: string) => {
@@ -1287,11 +1317,9 @@ function ComicReader({
   }, [currentComicId, onOpenComic])
 
   // ─── 计算动画方向 class ───
-  const animDir = isJapanese
-    ? (direction > 0 ? 'prev' : 'next')
-    : (direction > 0 ? 'next' : 'prev')
-  // 仅「翻页」时播放动效；进入漫画/换书（turnedRef=false）不播放，避免入场微幅抽动
-  const animClass = turnedRef.current ? `anim-${settings.animation} anim-${animDir}` : ''
+  // 使用 lastAnim 快照：只有真实翻页时才非空；动画结束后清空。
+  // 这样切换「翻页动效」设置时不会重播当前页；首页/尾页边界翻页也不会触发。
+  const animClass = lastAnim ? `anim-${lastAnim.anim} anim-${lastAnim.dir}` : ''
 
   // ─── 双页模式：计算当前展开页 ───
   const spreadStart = settings.mode === 'double' ? Math.floor(pageIndex / 2) * 2 : pageIndex
@@ -1416,7 +1444,9 @@ function ComicReader({
           </div>
         ) : settings.mode === 'double' ? (
           <div
+            key={turnToken}
             className={`reader-spread ${animClass}`}
+            onAnimationEnd={() => setLastAnim(null)}
           >
             {isJapanese ? (
               <>
@@ -1432,7 +1462,9 @@ function ComicReader({
           </div>
         ) : (
           <div
+            key={turnToken}
             className={`reader-page-single ${animClass}`}
+            onAnimationEnd={() => setLastAnim(null)}
           >
             <PageSlot index={pageIndex} dataUrl={pagesDataRef.current[pageIndex] ?? null} name={`page-${pageIndex + 1}`} zoom={zoom} isStitch={false} fill={settings.pageFill} failed={failedRef.current.has(pageIndex)} onRetry={retryPage} />
           </div>
@@ -1515,7 +1547,7 @@ function ComicReader({
                     ensureWindow(pageRef.current)
                   } else {
                     const target = Math.round(r * Math.max(1, pageCount - 1))
-                    setDirection(target >= pageRef.current ? 1 : -1)
+                    triggerTurnAnim(target, pageRef.current)
                     setPageIndex(Math.max(0, Math.min(pageCount - 1, target)))
                   }
                 }
@@ -1881,6 +1913,22 @@ function SettingsPanel({
               onClick={() => onUpdate('pageOrder', 'japanese')}
               title="日式模式（右翻）"
             >日式</button>
+          </div>
+        </div>
+
+        <div className="settings-row">
+          <span className="settings-label" title="滚轮与方向键翻页方向">滚轮逻辑</span>
+          <div className="settings-btns">
+            <button
+              className={`settings-btn ${settings.wheelScrollDirection === 'downNext' ? 'active' : ''}`}
+              onClick={() => onUpdate('wheelScrollDirection', 'downNext')}
+              title="滚轮向下 / ↓键下一页"
+            >下滚翻页</button>
+            <button
+              className={`settings-btn ${settings.wheelScrollDirection === 'upNext' ? 'active' : ''}`}
+              onClick={() => onUpdate('wheelScrollDirection', 'upNext')}
+              title="滚轮向上 / ↑键下一页"
+            >上滚翻页</button>
           </div>
         </div>
 

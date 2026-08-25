@@ -457,6 +457,23 @@ function ReadingSettingsPanel({
           </div>
         </div>
 
+        {/* 滚轮逻辑 */}
+        <div className="settings-row">
+          <span className="settings-label" title="滚轮与方向键翻页方向">滚轮逻辑</span>
+          <div className="settings-btns">
+            <button
+              className={`settings-btn ${settings.wheelScrollDirection === 'downNext' ? 'active' : ''}`}
+              onClick={() => update('wheelScrollDirection', 'downNext')}
+              title="滚轮向下 / ↓键下一页"
+            >下滚翻页</button>
+            <button
+              className={`settings-btn ${settings.wheelScrollDirection === 'upNext' ? 'active' : ''}`}
+              onClick={() => update('wheelScrollDirection', 'upNext')}
+              title="滚轮向上 / ↑键下一页"
+            >上滚翻页</button>
+          </div>
+        </div>
+
         {/* 缩放 */}
         <div className="settings-row">
           <span className="settings-label" title={`当前模式上限 ${maxZoomLabel}`}>缩放 (最大 {maxZoomLabel})</span>

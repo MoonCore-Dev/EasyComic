@@ -7,6 +7,7 @@ export type ReadingMode = 'single' | 'double' | 'stitch'
 export type TurnAnimation = 'flip' | 'slide' | 'none'
 export type PageOrder = 'normal' | 'japanese'
 export type PageFill = 'contain' | 'cover'
+export type WheelScrollDirection = 'downNext' | 'upNext'
 
 export interface ReaderSettings {
   /** 阅读模式：单页 / 双页 / 滚动 */
@@ -25,6 +26,8 @@ export interface ReaderSettings {
   showPageNumber: boolean
   /** 滚动(拼接)模式下是否隐藏滚动条 */
   hideScrollbar: boolean
+  /** 滚轮/方向键翻页逻辑：downNext=向下滚/下键下一页，upNext=向上滚/上键下一页 */
+  wheelScrollDirection: WheelScrollDirection
 }
 
 const SETTINGS_KEY = 'easycomic:reader-settings'
@@ -35,9 +38,10 @@ const defaultSettings: ReaderSettings = {
   pageOrder: 'normal',
   pageFill: 'contain',
   zoomPage: 1,
-  zoomStitch: 1,
+  zoomStitch: 0.5,
   showPageNumber: true,
-  hideScrollbar: false
+  hideScrollbar: false,
+  wheelScrollDirection: 'downNext'
 }
 
 function migrateFromLegacy(raw: ReaderSettings): ReaderSettings {

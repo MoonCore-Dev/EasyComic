@@ -20,3 +20,12 @@ check_css.js
 vite.config.js
 vite.config.d.ts
 
+# === 安卓原生工程忽略规则（不影响桌面版，仅作用于 android/） ===
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+*.apk
+*.aab
+
